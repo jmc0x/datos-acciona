@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EDAR Culebro</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0A84FF">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EDAR Culebro">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --bg:        #F2F2F7;
+      --card:      #FFFFFF;
+      --accent:    #0A84FF;
+      --green:     #30D158;
+      --red:       #FF453A;
+      --orange:    #FF9F0A;
+      --txt:       #1C1C1E;
+      --txt2:      #6E6E73;
+      --sep:       #C6C6C8;
+      --key:       #FFFFFF;
+      --keyspec:   #D1D1D6;
+      --sat:       env(safe-area-inset-top,    0px);
+      --sab:       env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+                   'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────── */
+    .hdr {
+      flex-shrink: 0;
+      background: var(--card);
+      border-bottom: .5px solid var(--sep);
+      padding: calc(var(--sat) + 10px) 14px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hdr-left h1  { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+    .hdr-left .dt { font-size: 11px; color: var(--txt2); margin-top: 2px; }
+    .hdr-btns     { display: flex; gap: 6px; }
+
+    .ico-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--bg); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: opacity .15s;
+    }
+    .ico-btn:active { opacity: .55; }
+    .ico-btn.torch-on { background: var(--green); }
+
+    /* ─── TABS ───────────────────────────────────────────── */
+    .tabs-wrap {
+      flex-shrink: 0;
+      background: var(--card);
+      border-bottom: .5px solid var(--sep);
+    }
+    .tabs-scroll {
+      display: flex; overflow-x: auto; align-items: center;
+      padding: 6px 10px; gap: 5px;
+      scrollbar-width: none; height: 44px;
+    }
+    .tabs-scroll::-webkit-scrollbar { display: none; }
+
+    .tab {
+      flex-shrink: 0; white-space: nowrap;
+      padding: 5px 13px; border-radius: 20px;
+      border: 1.5px solid var(--accent);
+      background: transparent; color: var(--accent);
+      font-size: 12px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+      transition: background .15s, color .15s;
+    }
+    .tab.act        { background: var(--accent); color: #fff; }
+    .tab .dot       { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .4; }
+    .tab .dot.done  { opacity: 1; background: var(--green); }
+    .tab.act .dot.done { background: #fff; }
+
+    /* ─── MAIN SCROLL ────────────────────────────────────── */
+    .main {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    .content {
+      padding: 11px;
+      display: flex; flex-direction: column; gap: 9px;
+      padding-bottom: calc(var(--sab) + 18px);
+    }
+
+    /* ─── PROGRESS ───────────────────────────────────────── */
+    .prog-row {
+      background: var(--card); border-radius: 12px;
+      padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .prog-bar  { flex: 1; height: 4px; background: var(--sep); border-radius: 2px; overflow: hidden; }
+    .prog-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .4s; }
+    .prog-txt  { font-size: 12px; color: var(--txt2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+    /* ─── DISPLAY CARD ───────────────────────────────────── */
+    .disp-card {
+      background: var(--card); border-radius: 16px; padding: 13px 15px;
+    }
+    .sec-ttl   { font-size: 10.5px; color: var(--txt2); text-transform: uppercase; letter-spacing: .4px; font-weight: 500; margin-bottom: 1px; }
+    .campo-nm  { font-size: 15px; font-weight: 600; color: var(--txt); margin-bottom: 5px; }
+    .val-big   {
+      font-size: 50px; font-weight: 700; text-align: right;
+      color: var(--txt); letter-spacing: -2px; line-height: 1;
+      min-height: 50px; font-variant-numeric: tabular-nums;
+    }
+    .val-big.ph { color: var(--sep); }
+    .nav-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; padding-top: 10px; border-top: .5px solid var(--sep);
+    }
+    .nav-btn {
+      background: none; border: none; color: var(--accent);
+      font-size: 14px; font-weight: 500; cursor: pointer; padding: 3px 0;
+    }
+    .nav-btn:disabled { opacity: .3; cursor: default; }
+    .nav-cnt { font-size: 13px; color: var(--txt2); font-variant-numeric: tabular-nums; }
+
+    /* ─── KEYPAD ─────────────────────────────────────────── */
+    .kp-card { background: var(--card); border-radius: 16px; padding: 7px; }
+    .kp-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; }
+    .key {
+      height: 62px; border: none; border-radius: 11px;
+      font-size: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--key); color: var(--txt);
+      box-shadow: 0 1.5px 0 rgba(0,0,0,.16);
+      transition: transform .07s, opacity .07s;
+    }
+    .key:active { transform: scale(.93); opacity: .65; }
+    .key.sp  { background: var(--keyspec); }
+    .key.del { color: var(--red); }
+
+    /* ─── CONFIRM BUTTON ─────────────────────────────────── */
+    .btn-ok {
+      width: 100%; padding: 15px; border: none; border-radius: 14px;
+      background: var(--accent); color: #fff;
+      font-size: 17px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s, background .3s;
+    }
+    .btn-ok:active { opacity: .75; }
+    .btn-ok.saved  { background: var(--green); }
+
+    /* ─── FIELDS LIST ────────────────────────────────────── */
+    .list-card { background: var(--card); border-radius: 16px; overflow: hidden; }
+    .list-ttl  { font-size: 11.5px; font-weight: 600; color: var(--txt2); text-transform: uppercase; letter-spacing: .5px; padding: 11px 15px 7px; }
+    .frow {
+      display: flex; align-items: center;
+      padding: 10px 15px; border-top: .5px solid var(--sep);
+      cursor: pointer; transition: background .1s;
+    }
+    .frow:active { background: var(--bg); }
+    .frow.sel    { background: #E5F1FF; }
+    .fdot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--sep); flex-shrink: 0; margin-right: 10px;
+    }
+    .fdot.ok   { background: var(--green); }
+    .frow.sel .fdot { background: var(--accent); }
+    .flabel { flex: 1; font-size: 14px; color: var(--txt); }
+    .fval   { font-size: 14px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .fval.empty { color: var(--sep); font-weight: 400; }
+
+    /* ─── OVERLAY / SHEET ────────────────────────────────── */
+    .ov {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.52); z-index: 200;
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .ov.open { opacity: 1; pointer-events: all; }
+    .sheet {
+      background: var(--card); border-radius: 22px 22px 0 0;
+      padding: 20px 16px calc(var(--sab) + 20px);
+      width: 100%;
+    }
+    .sh-ttl  { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .sh-desc { font-size: 14px; color: var(--txt2); text-align: center; margin-bottom: 18px; line-height: 1.45; }
+    .sh-img  {
+      width: 100%; border-radius: 12px; display: none;
+      margin-bottom: 12px; max-height: 260px; object-fit: contain;
+    }
+    .sh-btn {
+      width: 100%; padding: 15px; border: none; border-radius: 13px;
+      font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 8px;
+      transition: opacity .15s;
+    }
+    .sh-btn:active { opacity: .75; }
+    .sh-btn.blue  { background: var(--accent); color: #fff; }
+    .sh-btn.green { background: var(--green);  color: #fff; }
+    .sh-btn.gray  { background: var(--keyspec); color: var(--txt); font-weight: 500; }
+
+    /* ─── TOAST ─────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: calc(var(--sab) + 22px); left: 50%;
+      transform: translateX(-50%) translateY(14px);
+      background: #1C1C1E; color: #fff;
+      padding: 10px 20px; border-radius: 24px;
+      font-size: 14px; font-weight: 500;
+      pointer-events: none; opacity: 0; white-space: nowrap;
+      transition: all .3s; z-index: 9999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── DARK MODE ──────────────────────────────────────── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1C1C1E; --card: #2C2C2E;
+        --txt: #FFFFFF; --txt2: #8E8E93; --sep: #3A3A3C;
+        --key: #3A3A3C; --keyspec: #232325;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-left">
+      <h1>EDAR Culebro</h1>
+      <div class="dt" id="fecha"></div>
+    </div>
+    <div class="hdr-btns">
+      <button class="ico-btn" id="btnTorch"  title="Linterna">🔦</button>
+      <button class="ico-btn" id="btnScan"   title="Cámara">📷</button>
+      <button class="ico-btn" id="btnExport" title="Exportar">📤</button>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs-wrap">
+    <div class="tabs-scroll" id="tabs"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainScroll">
+    <div class="content">
+
+      <!-- Progress total -->
+      <div class="prog-row">
+        <span class="prog-txt" id="progTxt"></span>
+        <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+      </div>
+
+      <!-- Display -->
+      <div class="disp-card">
+        <div class="sec-ttl"  id="secTtl"></div>
+        <div class="campo-nm" id="campoNm"></div>
+        <div class="val-big ph" id="valBig">—</div>
+        <div class="nav-row">
+          <button class="nav-btn" id="btnPrev">← Anterior</button>
+          <span   class="nav-cnt" id="navCnt">1 / 1</span>
+          <button class="nav-btn" id="btnNext">Siguiente →</button>
+        </div>
+      </div>
+
+      <!-- Keypad -->
+      <div class="kp-card">
+        <div class="kp-grid" id="keypad"></div>
+      </div>
+
+      <!-- Confirm -->
+      <button class="btn-ok" id="btnOk">Confirmar y Guardar</button>
+
+      <!-- Fields List -->
+      <div class="list-card">
+        <div class="list-ttl" id="listTtl">Campos</div>
+        <div id="fieldsList"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- OVERLAY: CÁMARA -->
+  <div class="ov" id="ovScan">
+    <div class="sheet">
+      <div class="sh-ttl">📷 Fotografiar Medidor</div>
+      <div class="sh-desc">Toma una foto del cuadro como referencia y luego introduce el valor manualmente.</div>
+      <img class="sh-img" id="scanImg">
+      <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
+      <button class="sh-btn blue" id="btnPhoto">📷 Abrir Cámara</button>
+      <button class="sh-btn gray" id="btnCloseScan">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- OVERLAY: EXPORTAR -->
+  <div class="ov" id="ovExport">
+    <div class="sheet">
+      <div class="sh-ttl">📤 Exportar Datos</div>
+      <div class="sh-desc" id="exportDesc"></div>
+      <button class="sh-btn green" id="btnCSV">📊  Descargar CSV</button>
+      <button class="sh-btn blue"  id="btnJSON">📋  Descargar JSON</button>
+      <button class="sh-btn gray"  id="btnCloseExp">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+  'use strict';
+
+  // ══════════════════════════════════════════════════════════════════
+  //  SECCIONES — 10 secciones, ~92 campos (todos recogidos en campo)
+  // ══════════════════════════════════════════════════════════════════
+  const SECS = [
+    { id:'energia_electrica',
+      tab:'⚡ E.Eléctrica',
+      ttl:'Energía Eléctrica  [kWh]',
+      campos:['Activa 1.18.1','Activa 1.18.2','Activa 1.18.3','Activa 1.18.4','Activa 1.18.5','Activa 1.18.6','Activa 1.18.0 Total',
+              'Reactiva 1.58.1','Reactiva 1.58.2','Reactiva 1.58.3','Reactiva 1.58.4','Reactiva 1.58.5','Reactiva 1.58.6','Reactiva 1.58.0 Total',
+              'Sobrepas. 1.12.1','Sobrepas. 1.12.2','Sobrepas. 1.12.3','Sobrepas. 1.12.4','Sobrepas. 1.12.5','Sobrepas. 1.12.6','Sobrepas. 1.12.0 Total',
+              'Maxímetro 1.16.1','Maxímetro 1.16.2','Maxímetro 1.16.3','Maxímetro 1.16.4','Maxímetro 1.16.5','Maxímetro 1.16.6','Maxímetro 1.16.0 Total'] },
+
+    { id:'cogener',
+      tab:'⚙️ Cogeneración',
+      ttl:'Armario Cogeneración  [kW]',
+      campos:['Motor 1 (kW)','Motor 2 (kW)'] },
+
+    { id:'mg_energia',
+      tab:'🔋 Motogenerador',
+      ttl:'Energía Activa Motogenerador  [kWh]',
+      campos:['Activa 1.18.1','Activa 1.18.2','Activa 1.18.3','Activa 1.18.4','Activa 1.18.5','Activa 1.18.6','Activa 1.18.0 Total','Activa Total Pantalla Nueva',
+              'Reactiva 1.58.1','Reactiva 1.58.2','Reactiva 1.58.3','Reactiva 1.58.4','Reactiva 1.58.5','Reactiva 1.58.6','Reactiva 1.58.0 Total',
+              'Maxímetro 1.16.1','Maxímetro 1.16.2','Maxímetro 1.16.3','Maxímetro 1.16.4','Maxímetro 1.16.5','Maxímetro 1.16.6','Maxímetro 1.16.0 Total'] },
+
+    { id:'ccm',
+      tab:'🔌 CCMs',
+      ttl:'Lecturas Energía CCMs',
+      campos:['CCM1 — E.Act','CCM1 — E.Rea',
+              'CCM2 — E.Act','CCM2 — E.Rea',
+              'Turbos — E.Act','Turbos — E.Rea',
+              'CCM4 — E.Act','CCM4 — E.Rea',
+              'Motogen. — E.Act','Motogen. — E.Rea'] },
+
+    { id:'e_obra',
+      tab:'🏗️ E.Obra',
+      ttl:'Energía Obra',
+      campos:['Activa','Reactiva'] },
+
+    { id:'turbos_cons',
+      tab:'🌀 Cons.Turbos',
+      ttl:'Control Consumo Turbos',
+      campos:['kWh','A (Amperios)','kW (Potencia)'] },
+
+    { id:'turbos_horas',
+      tab:'⏱️ Horas Turbos',
+      ttl:'Control Horas Turbos',
+      campos:['Turbo 1','Turbo 2','Turbo 3','Turbo 4','Turbo 5','Turbo 6'] },
+
+    { id:'cloruro',
+      tab:'🧪 Cloruro',
+      ttl:'Depósito Cloruro Férrico  [litros]',
+      campos:['Dep. 1 (l)','Dep. 2 (l)'] },
+
+    { id:'agua',
+      tab:'💧 Agua Potable',
+      ttl:'Contadores Agua Potable',
+      campos:['Camino de Entrada','Control General','Edificio Control',
+              'Des. Pretratamiento','Des. Fangos','Terciario Convencional',
+              'TTA Entrada','TTA Control Calidad','Depós. Contraincendios'] },
+
+    { id:'contenedores',
+      tab:'📦 Contenedores',
+      ttl:'Contenedores en Planta',
+      campos:['Pozo Gruesos 1','Pozo Gruesos 2','Tamiz 1','Tamiz 2',
+              'Desarenador 1','Desarenador 2','Grasas 1','Rototamiz 1'] },
+  ];
+
+  // ══════════════════════════════════════════════════════════════════
+  //  ESTADO
+  // ══════════════════════════════════════════════════════════════════
+  const S = {
+    si:  0,    // section index
+    ci:  0,    // campo index
+    buf: '',   // input buffer
+    vals: {}   // { secId: { campo: val } }
+  };
+
+  SECS.forEach(s => {
+    S.vals[s.id] = {};
+    s.campos.forEach(c => S.vals[s.id][c] = '');
+  });
+
+  const sec    = () => SECS[S.si];
+  const campo  = () => sec().campos[S.ci];
+
+  // ══════════════════════════════════════════════════════════════════
+  //  PERSISTENCIA
+  // ══════════════════════════════════════════════════════════════════
+  const hoy = () => new Date().toISOString().slice(0,10);
+  const LSKEY = () => 'edar_v2_' + hoy();
+
+  function cargar() {
+    try {
+      const d = JSON.parse(localStorage.getItem(LSKEY()) || '{}');
+      SECS.forEach(s => {
+        if (d[s.id]) s.campos.forEach(c => {
+          if (d[s.id][c] !== undefined) S.vals[s.id][c] = d[s.id][c];
+        });
+      });
+    } catch(_) {}
+  }
+
+  function guardar() {
+    try { localStorage.setItem(LSKEY(), JSON.stringify(S.vals)); } catch(_) {}
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  PROGRESO
+  // ══════════════════════════════════════════════════════════════════
+  function progSec(i) {
+    const s = SECS[i];
+    const f = s.campos.filter(c => S.vals[s.id][c] !== '').length;
+    return { f, t: s.campos.length, done: f === s.campos.length };
+  }
+
+  function progTotal() {
+    let t = 0, f = 0;
+    SECS.forEach((_,i) => { const p = progSec(i); t += p.t; f += p.f; });
+    return { f, t };
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  RENDER
+  // ══════════════════════════════════════════════════════════════════
+  function renderTabs() {
+    const el = document.getElementById('tabs');
+    el.innerHTML = '';
+    SECS.forEach((s,i) => {
+      const p    = progSec(i);
+      const btn  = document.createElement('button');
+      btn.className = 'tab' + (i === S.si ? ' act' : '');
+      btn.innerHTML = `${s.tab}<span class="dot${p.done?' done':''}"></span>`;
+      btn.onclick   = () => goSec(i);
+      el.appendChild(btn);
+    });
+  }
+
+  function renderDisplay() {
+    const s  = sec();
+    const c  = campo();
+    document.getElementById('secTtl').textContent  = s.ttl;
+    document.getElementById('campoNm').textContent = c;
+    const vb = document.getElementById('valBig');
+    vb.textContent  = S.buf || '—';
+    vb.className    = 'val-big' + (S.buf ? '' : ' ph');
+    document.getElementById('navCnt').textContent  = (S.ci+1) + ' / ' + s.campos.length;
+    document.getElementById('btnPrev').disabled    = S.ci === 0;
+    document.getElementById('btnNext').disabled    = S.ci === s.campos.length - 1;
+  }
+
+  function renderProg() {
+    const p   = progTotal();
+    const pct = p.t ? p.f / p.t : 0;
+    document.getElementById('progTxt').textContent      = p.f + ' / ' + p.t + ' campos';
+    document.getElementById('progFill').style.width     = Math.round(pct * 100) + '%';
+  }
+
+  function renderList() {
+    const s  = sec();
+    document.getElementById('listTtl').textContent = s.ttl;
+    const el = document.getElementById('fieldsList');
+    el.innerHTML = '';
+    s.campos.forEach((c,i) => {
+      const val = S.vals[s.id][c];
+      const row = document.createElement('div');
+      row.className = 'frow' + (i === S.ci ? ' sel' : '');
+      row.innerHTML = `
+        <div class="fdot${val ? ' ok' : ''}"></div>
+        <div class="flabel">${c}</div>
+        <div class="fval${val ? '' : ' empty'}">${val || '—'}</div>`;
+      row.onclick = () => goCampo(i);
+      el.appendChild(row);
+    });
+  }
+
+  function render() {
+    renderTabs();
+    renderDisplay();
+    renderProg();
+    renderList();
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  NAVEGACIÓN
+  // ══════════════════════════════════════════════════════════════════
+  function saveCurrentBuf() { S.vals[sec().id][campo()] = S.buf; }
+
+  function goSec(i) {
+    saveCurrentBuf();
+    S.si  = i;
+    S.ci  = 0;
+    S.buf = S.vals[sec().id][campo()] || '';
+    render();
+    const tab = document.getElementById('tabs').children[i];
+    if (tab) tab.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+    document.getElementById('mainScroll').scrollTop = 0;
+  }
+
+  function goCampo(i) {
+    saveCurrentBuf();
+    S.ci  = i;
+    S.buf = S.vals[sec().id][campo()] || '';
+    render();
+    document.getElementById('mainScroll').scrollTop = 0;
+  }
+
+  function navPrev() { if (S.ci > 0) goCampo(S.ci - 1); }
+  function navNext() { if (S.ci < sec().campos.length - 1) goCampo(S.ci + 1); }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  TECLADO
+  // ══════════════════════════════════════════════════════════════════
+  function buildKeypad() {
+    const grid = document.getElementById('keypad');
+    [['7','8','9'],['4','5','6'],['1','2','3'],[',','0','⌫']].forEach(row =>
+      row.forEach(k => {
+        const b = document.createElement('button');
+        b.className  = 'key' + (k===',' || k==='⌫' ? ' sp' : '') + (k==='⌫' ? ' del' : '');
+        b.textContent = k;
+        b.addEventListener('pointerdown', e => {
+          e.preventDefault();
+          tecla(k);
+          if (navigator.vibrate) navigator.vibrate(8);
+        });
+        grid.appendChild(b);
+      })
+    );
+  }
+
+  function tecla(k) {
+    if (k === '⌫') {
+      S.buf = S.buf.slice(0, -1);
+    } else if (k === ',') {
+      if (!S.buf.includes(',')) S.buf += ',';
+    } else {
+      if (S.buf.length < 12) S.buf += k;
+    }
+    renderDisplay();
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  CONFIRMAR
+  // ══════════════════════════════════════════════════════════════════
+  function confirmar() {
+    saveCurrentBuf();
+    guardar();
+    const btn = document.getElementById('btnOk');
+    btn.textContent = '✓  Guardado';
+    btn.classList.add('saved');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => {
+      btn.textContent = 'Confirmar y Guardar';
+      btn.classList.remove('saved');
+    }, 1500);
+    if (S.ci < sec().campos.length - 1) {
+      S.ci++;
+      S.buf = S.vals[sec().id][campo()] || '';
+    }
+    render();
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  EXPORTAR
+  // ══════════════════════════════════════════════════════════════════
+  function openExport() {
+    saveCurrentBuf();
+    const p = progTotal();
+    document.getElementById('exportDesc').textContent =
+      'Fecha: ' + hoy() + ' — ' + p.f + ' de ' + p.t + ' campos completados';
+    openOv('ovExport');
+  }
+
+  function dl(content, fname, mime) {
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([content], {type: mime})),
+      download: fname
+    });
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  function exportCSV() {
+    let csv = '\uFEFFSeccion,Campo,Valor,Fecha\n';
+    SECS.forEach(s => s.campos.forEach(c => {
+      const v = (S.vals[s.id][c] || '').replace(/"/g, '""');
+      csv += `"${s.ttl}","${c}","${v}","${hoy()}"\n`;
+    }));
+    dl(csv, 'EDAR_' + hoy() + '.csv', 'text/csv;charset=utf-8;');
+    closeOv('ovExport');
+    showToast('📊  CSV descargado');
+  }
+
+  function exportJSON() {
+    const d = {
+      app: 'EDAR Culebro', version: '2.0',
+      fecha: hoy(), exportado: new Date().toLocaleString('es-ES'),
+      datos: S.vals
+    };
+    dl(JSON.stringify(d, null, 2), 'EDAR_' + hoy() + '.json', 'application/json');
+    closeOv('ovExport');
+    showToast('📋  JSON descargado');
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  LINTERNA (torch) — Android Chrome
+  // ══════════════════════════════════════════════════════════════════
+  let _torchStream = null;
+  let _torchOn     = false;
+
+  async function toggleTorch() {
+    const btn = document.getElementById('btnTorch');
+    if (!_torchOn) {
+      try {
+        _torchStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        const track = _torchStream.getVideoTracks()[0];
+        if (!track) throw new Error('no track');
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        if (caps.torch) {
+          await track.applyConstraints({ advanced: [{ torch: true }] });
+          _torchOn = true;
+          btn.classList.add('torch-on');
+        } else {
+          _torchStream.getTracks().forEach(t => t.stop());
+          showToast('Linterna no disponible en este dispositivo');
+        }
+      } catch(_) {
+        showToast('No se pudo encender la linterna');
+      }
+    } else {
+      if (_torchStream) {
+        const track = _torchStream.getVideoTracks()[0];
+        if (track) await track.applyConstraints({ advanced: [{ torch: false }] }).catch(()=>{});
+        _torchStream.getTracks().forEach(t => t.stop());
+        _torchStream = null;
+      }
+      _torchOn = false;
+      btn.classList.remove('torch-on');
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  CÁMARA (foto de referencia)
+  // ══════════════════════════════════════════════════════════════════
+  function setupCamera() {
+    const input   = document.getElementById('camInput');
+    const preview = document.getElementById('scanImg');
+    document.getElementById('btnPhoto').onclick = () => input.click();
+    input.onchange = e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        preview.src = ev.target.result;
+        preview.style.display = 'block';
+        document.getElementById('btnPhoto').textContent = '📷 Nueva foto';
+      };
+      r.readAsDataURL(f);
+      input.value = '';
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  OVERLAY helpers
+  // ══════════════════════════════════════════════════════════════════
+  function openOv(id)  { document.getElementById(id).classList.add('open'); }
+  function closeOv(id) { document.getElementById(id).classList.remove('open'); }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  TOAST
+  // ══════════════════════════════════════════════════════════════════
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  TECLADO FÍSICO (útil en pruebas de escritorio)
+  // ══════════════════════════════════════════════════════════════════
+  document.addEventListener('keydown', e => {
+    if (document.querySelector('.ov.open')) return;
+    const k = e.key;
+    if (k >= '0' && k <= '9')           { e.preventDefault(); tecla(k);  }
+    else if (k === 'Backspace')          { e.preventDefault(); tecla('⌫'); }
+    else if (k === ',' || k === '.')     { e.preventDefault(); tecla(','); }
+    else if (k === 'Enter')              { e.preventDefault(); confirmar(); }
+    else if (k === 'ArrowRight'||k==='Tab') { e.preventDefault(); navNext(); }
+    else if (k === 'ArrowLeft')          { e.preventDefault(); navPrev(); }
+    else if (k === 'ArrowDown')          { e.preventDefault(); navNext(); }
+    else if (k === 'ArrowUp')            { e.preventDefault(); navPrev(); }
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  //  INIT
+  // ══════════════════════════════════════════════════════════════════
+  window.addEventListener('load', () => {
+    // Fecha
+    const d = new Date();
+    const DIAS  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+                   'septiembre','octubre','noviembre','diciembre'];
+    document.getElementById('fecha').textContent =
+      DIAS[d.getDay()] + ', ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear();
+
+    cargar();
+    S.buf = S.vals[sec().id][campo()] || '';
+
+    buildKeypad();
+
+    document.getElementById('btnPrev').onclick      = navPrev;
+    document.getElementById('btnNext').onclick      = navNext;
+    document.getElementById('btnOk').onclick        = confirmar;
+    document.getElementById('btnTorch').onclick     = toggleTorch;
+    document.getElementById('btnScan').onclick      = () => openOv('ovScan');
+    document.getElementById('btnExport').onclick    = openExport;
+    document.getElementById('btnCSV').onclick       = exportCSV;
+    document.getElementById('btnJSON').onclick      = exportJSON;
+    document.getElementById('btnCloseScan').onclick = () => closeOv('ovScan');
+    document.getElementById('btnCloseExp').onclick  = () => closeOv('ovExport');
+
+    // Cerrar overlay al tocar fuera
+    ['ovScan','ovExport'].forEach(id =>
+      document.getElementById(id).addEventListener('click', e => {
+        if (e.target.id === id) closeOv(id);
+      })
+    );
+
+    setupCamera();
+    render();
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  });
+  </script>
+</body>
+</html>
