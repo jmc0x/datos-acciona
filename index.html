@@ -411,8 +411,17 @@
   // ══════════════════════════════════════════════════════════════════
   //  PERSISTENCIA
   // ══════════════════════════════════════════════════════════════════
-  const hoy = () => new Date().toISOString().slice(0,10);
-  const LSKEY = () => 'edar_v2_' + hoy();
+  const diaDeTurno = () => {
+    const d = new Date();
+    if (d.getHours() < 6) {
+      d.setDate(d.getDate() - 1);
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const LSKEY = () => 'edar_v2_' + diaDeTurno();
 
   function cargar() {
     try {
@@ -489,10 +498,22 @@
       const val = S.vals[s.id][c];
       const row = document.createElement('div');
       row.className = 'frow' + (i === S.ci ? ' sel' : '');
-      row.innerHTML = `
-        <div class="fdot${val ? ' ok' : ''}"></div>
-        <div class="flabel">${c}</div>
-        <div class="fval${val ? '' : ' empty'}">${val || '—'}</div>`;
+
+      const fdot = document.createElement('div');
+      fdot.className = 'fdot' + (val ? ' ok' : '');
+
+      const flabel = document.createElement('div');
+      flabel.className = 'flabel';
+      flabel.textContent = c;
+
+      const fval = document.createElement('div');
+      fval.className = 'fval' + (val ? '' : ' empty');
+      fval.textContent = val || '—';
+
+      row.appendChild(fdot);
+      row.appendChild(flabel);
+      row.appendChild(fval);
+
       row.onclick = () => goCampo(i);
       el.appendChild(row);
     });
@@ -591,7 +612,7 @@
     saveCurrentBuf();
     const p = progTotal();
     document.getElementById('exportDesc').textContent =
-      'Fecha: ' + hoy() + ' — ' + p.f + ' de ' + p.t + ' campos completados';
+      'Fecha: ' + diaDeTurno() + ' — ' + p.f + ' de ' + p.t + ' campos completados';
     openOv('ovExport');
   }
 
@@ -606,12 +627,12 @@
   }
 
   function exportCSV() {
-    let csv = '\uFEFFSeccion,Campo,Valor,Fecha\n';
+    let csv = '\uFEFFSeccion;Campo;Valor;Fecha\n';
     SECS.forEach(s => s.campos.forEach(c => {
       const v = (S.vals[s.id][c] || '').replace(/"/g, '""');
-      csv += `"${s.ttl}","${c}","${v}","${hoy()}"\n`;
+      csv += `"${s.ttl}";"${c}";"${v}";"${diaDeTurno()}"\n`;
     }));
-    dl(csv, 'EDAR_' + hoy() + '.csv', 'text/csv;charset=utf-8;');
+    dl(csv, 'EDAR_' + diaDeTurno() + '.csv', 'text/csv;charset=utf-8;');
     closeOv('ovExport');
     showToast('📊  CSV descargado');
   }
@@ -619,10 +640,10 @@
   function exportJSON() {
     const d = {
       app: 'EDAR Culebro', version: '2.0',
-      fecha: hoy(), exportado: new Date().toLocaleString('es-ES'),
+      fecha: diaDeTurno(), exportado: new Date().toLocaleString('es-ES'),
       datos: S.vals
     };
-    dl(JSON.stringify(d, null, 2), 'EDAR_' + hoy() + '.json', 'application/json');
+    dl(JSON.stringify(d, null, 2), 'EDAR_' + diaDeTurno() + '.json', 'application/json');
     closeOv('ovExport');
     showToast('📋  JSON descargado');
   }
@@ -726,6 +747,9 @@
   window.addEventListener('load', () => {
     // Fecha
     const d = new Date();
+    if (d.getHours() < 6) {
+      d.setDate(d.getDate() - 1);
+    }
     const DIAS  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
     const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
                    'septiembre','octubre','noviembre','diciembre'];
